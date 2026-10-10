@@ -1,0 +1,28 @@
+# Secrets
+.env
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/
+*.egg-info/
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+
+# Local database (Phase 5) - never commit the actual data
+*.db
+
+# Frontend (frontend/)
+node_modules/
+dist/
+
+# Agent configs
+.agents/
+
+# Evaluation results (generated, not source)
+evaluation/results/

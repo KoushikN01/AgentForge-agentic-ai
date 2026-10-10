@@ -1,0 +1,42 @@
+[project]
+name = "agentforge"
+version = "0.1.0"
+description = "Multi-agent AI incident investigation platform (learning project)"
+requires-python = ">=3.10"
+
+# Phase 1-5 dependencies. (sample_project/ has its own separate
+# requirements.txt - it's a standalone app, not part of AgentForge itself.)
+dependencies = [
+    "google-genai>=1.0.0",
+    "pydantic>=2.0",
+    "python-dotenv>=1.0.0",
+    "chromadb>=0.5.0",
+    "langgraph>=1.0.0",
+    "fastapi>=0.110.0",
+    "uvicorn>=0.29.0",
+    "sqlalchemy>=2.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-mock>=3.0",
+    "httpx>=0.27.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["backend/tests"]
+pythonpath = ["backend"]
+
+# Without this, `pip install -e .` fails outright: setuptools' automatic
+# package discovery sees backend/, frontend/, evaluation/, sample_project/
+# and knowledge_base/ all sitting at the project root and refuses to guess
+# which one is "the package" ("Multiple top-level packages discovered in
+# a flat-layout"). This tells it explicitly: the one real Python package
+# is app/, found under backend/. Found and fixed during the final-phase
+# audit - see BUILD_VERIFICATION.md.
+[tool.setuptools]
+package-dir = {"" = "backend"}
+
+[tool.setuptools.packages.find]
+where = ["backend"]

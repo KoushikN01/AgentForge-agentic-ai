@@ -1,0 +1,39 @@
+# Run the whole stack with `docker compose up --build`.
+#
+# Two services: the API (SQLite on a named volume, so data survives a
+# restart) and the frontend (built and served by nginx). No Postgres
+# service by default - SQLite is the documented default (see
+# backend/app/core/config.py, .env.example); to use Postgres instead, add
+# a `db: image: postgres:16` service and point DATABASE_URL at it, no
+# code change needed either way (backend/app/db/database.py).
+#
+# NOT build/run-tested here - no Docker daemon in this environment. See
+# BUILD_VERIFICATION.md for exactly what that means and how to verify it
+# yourself.
+services:
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - GEMINI_MODEL=${GEMINI_MODEL:-gemini-2.5-flash}
+      - GEMINI_EMBEDDING_MODEL=${GEMINI_EMBEDDING_MODEL:-gemini-embedding-001}
+      - DATABASE_URL=sqlite:////data/agentforge.db
+      - RAG_MODE=${RAG_MODE:-vector}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    volumes:
+      - agentforge_data:/data
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_BASE_URL: http://localhost:8000
+    ports:
+      - "5173:80"
+    depends_on:
+      - api
+
+volumes:
+  agentforge_data:

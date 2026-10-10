@@ -1,0 +1,14 @@
+2026-09-09 21:03:11 | INFO | request_id=f0a1b2c3 | POST /api/auth/login | request received
+2026-09-09 21:03:11 | INFO | request_id=f0a1b2c3 | POST /api/auth/login | responded 401
+2026-09-09 21:04:02 | INFO | request_id=8d7c6b5a | GET /health | responded 200
+2026-09-10 08:12:01 | INFO | request_id=a1b2c3d4 | POST /api/auth/login | request received
+2026-09-10 08:12:03 | ERROR | request_id=a1b2c3d4 | POST /api/auth/login | KeyError: 'JWT_SECRET_KEY'
+2026-09-10 08:12:03 | INFO | request_id=a1b2c3d4 | POST /api/auth/login | responded 500
+2026-09-10 08:14:47 | INFO | request_id=9e8f7a6b | GET /api/orders/101 | request received
+2026-09-10 08:14:47 | INFO | request_id=9e8f7a6b | GET /api/orders/101 | responded 200
+2026-09-10 08:20:15 | INFO | request_id=1c2d3e4f | GET /api/orders/999999 | request received
+2026-09-10 08:20:15 | ERROR | request_id=1c2d3e4f | GET /api/orders/999999 | KeyError: 999999
+2026-09-10 08:20:15 | INFO | request_id=1c2d3e4f | GET /api/orders/999999 | responded 500
+2026-09-10 09:01:33 | INFO | request_id=5f6a7b8c | POST /api/auth/login | request received
+2026-09-10 09:01:33 | ERROR | request_id=5f6a7b8c | POST /api/auth/login | KeyError: 'JWT_SECRET_KEY'
+2026-09-10 09:01:33 | INFO | request_id=5f6a7b8c | POST /api/auth/login | responded 500
