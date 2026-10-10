@@ -1,6 +1,6 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Python-3.10+-3776AB?style=for-the-badge&logo=python&logoColor=white" />
-  <img src="https://img.shields.io/badge/LangGraph-Multi--Agent-FF6F00?style=for-the-badge&logo=chainlink&logoColor=white" />
+  <img src="https://img.shields.io/badge/LangGraph-Multi_Agent-FF6F00?style=for-the-badge&logo=chainlink&logoColor=white" />
   <img src="https://img.shields.io/badge/Google_Gemini-LLM-4285F4?style=for-the-badge&logo=google&logoColor=white" />
   <img src="https://img.shields.io/badge/FastAPI-Backend-009688?style=for-the-badge&logo=fastapi&logoColor=white" />
   <img src="https://img.shields.io/badge/React-Frontend-61DAFB?style=for-the-badge&logo=react&logoColor=black" />
@@ -8,170 +8,134 @@
   <img src="https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white" />
 </p>
 
-<h1 align="center">🤖 AgentForge — Multi-Agent AI Incident Investigation System</h1>
+# AgentForge
 
-<p align="center">
-  <strong>An end-to-end Agentic AI system that autonomously investigates software incidents using 7 specialized AI agents, Agentic RAG, a LangGraph orchestration pipeline, and a human-in-the-loop approval workflow.</strong>
-</p>
+A multi-agent AI system that investigates software incidents the way a real engineer would. It reads logs, searches the codebase, pulls relevant documentation through RAG, figures out what went wrong, writes a fix, runs actual tests against it, reviews the diff for safety, and then stops and waits for a human to approve before touching anything real.
 
-<p align="center">
-  <em>Not a toy chatbot wrapper — a production-grade, multi-agent architecture with sandboxed code execution, bounded retry loops, and real test verification.</em>
-</p>
+Built with **LangGraph**, **Agentic RAG (ChromaDB + Gemini embeddings)**, **FastAPI**, and **React**. Not a chatbot with a UI slapped on top. There are 7 agents, 131 tests, and a real evaluation harness.
 
 ---
 
-## 📌 Why This Project Stands Out
+## What problem does this solve?
 
-> **For recruiters:** This project demonstrates hands-on proficiency in the most in-demand AI/ML skills of 2025-26 — **Agentic AI**, **RAG (Retrieval-Augmented Generation)**, **LangGraph**, **LLM orchestration**, and **full-stack development**. Every component is real, tested, and working — not a tutorial copy-paste.
+Say someone files a bug: *"The login endpoint is returning 500 errors."*
 
-| What recruiters look for | Where you'll find it in this project |
-|---|---|
-| **Agentic AI Architecture** | 7 specialized agents orchestrated via LangGraph `StateGraph` |
-| **RAG (Retrieval-Augmented Generation)** | Agentic RAG with iterative retrieval, sufficiency checking, and keyword fallback |
-| **LangGraph / LangChain Ecosystem** | Full `StateGraph` with conditional routing, retry loops, and state management |
-| **LLM Integration (Gemini)** | Structured outputs via Pydantic models, prompt engineering, reflection patterns |
-| **Human-in-the-Loop** | Mandatory approval gate before any code touches the real codebase |
-| **Full-Stack Development** | FastAPI REST API + React/Vite dashboard + SQLAlchemy + Docker |
-| **Testing & Evaluation** | 131 automated tests + evaluation harness measuring real fix accuracy |
-| **Safety-First Design** | Sandboxed execution, path traversal guards, bounded retries |
+Normally a developer would go check the logs, grep through the code, look at the docs, form a hypothesis, try a fix, run the tests, review it. That's exactly what AgentForge does, except each step is handled by a dedicated AI agent:
+
+```
+Bug report comes in
+       |
+Investigation Agent    reads logs and greps the source code
+       |
+Knowledge Agent        searches docs/runbooks using Agentic RAG
+       |
+Debugging Agent        diagnoses the root cause based on evidence
+       |
+Coding Agent           writes a fix (only in a sandbox copy, never the real code)
+       |
+Testing Agent          runs real pytest, not "the AI thinks it looks fine"
+       |
+Review Agent           checks the actual diff for risks
+       |
+Human Approval         you look at everything and decide: apply or reject
+```
+
+The whole point is that agents pass structured data to each other through a shared state, and nothing touches your real codebase until you explicitly say so.
 
 ---
 
-## 🧠 What Does This Project Do? (Simple Explanation)
-
-Imagine you're an on-call engineer and a bug report comes in: *"Login endpoint is returning 500 errors"*.
-
-**AgentForge handles the entire investigation automatically:**
+## Architecture overview
 
 ```
-📋 Bug Report Filed
-      ↓
-🔍 Investigation Agent — reads logs, greps source code for clues
-      ↓
-📚 Knowledge Agent (RAG) — searches documentation/runbooks for context
-      ↓
-🐛 Debugging Agent — diagnoses the root cause with evidence
-      ↓
-💻 Coding Agent — proposes a code fix (applied ONLY to a sandbox copy)
-      ↓
-🧪 Testing Agent — runs real pytest tests (not "AI says it looks right")
-      ↓
-🛡️ Review Agent — reviews the actual diff for risks
-      ↓
-👤 Human Approval — YOU decide if the fix goes live
-```
+React Frontend (:5173)
+    Dashboard, Incident Detail, Timeline
+         |
+         | REST API calls (JSON over HTTP)
+         v
+FastAPI Backend (:8000)
+    Routes, Schemas, SQLAlchemy ORM, Background Tasks
+         |
+         v
+LangGraph StateGraph (the multi-agent workflow)
 
-**The key idea:** AI agents collaborate in a pipeline — each agent does one thing well, passes structured data to the next, and the system never touches your real code until a human explicitly approves.
-
----
-
-## 🏗️ System Architecture
-
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                     React Frontend (:5173)                          │
-│          Dashboard  •  Incident Detail  •  Timeline View            │
-└──────────────────────────────┬──────────────────────────────────────┘
-                               │ REST API (fetch + JSON)
-┌──────────────────────────────▼──────────────────────────────────────┐
-│                    FastAPI Backend (:8000)                           │
-│     Routes  •  Schemas  •  SQLAlchemy ORM  •  Background Tasks      │
-└──────────────────────────────┬──────────────────────────────────────┘
-                               │
-┌──────────────────────────────▼──────────────────────────────────────┐
-│                LangGraph StateGraph Workflow                         │
-│                                                                     │
-│  ┌────────────┐   ┌───────────────┐   ┌─────────────┐              │
-│  │ Supervisor │──▶│ Investigation │──▶│  Knowledge   │              │
-│  │            │   │   (Logs/Code) │   │ (Agentic RAG)│              │
-│  └────────────┘   └───────────────┘   └──────┬──────┘              │
-│                                              │                      │
-│  ┌────────────┐   ┌───────────────┐   ┌──────▼──────┐              │
-│  │   Review   │◀──│    Testing    │◀──│   Coding    │◀─┐           │
-│  │ (Security) │   │  (Real Tests) │   │ (Sandboxed) │  │           │
-│  └─────┬──────┘   └───────────────┘   └─────────────┘  │           │
-│        │                                                │ retry     │
-│        ├── approved + tests pass ──▶ Awaiting Approval  │ (max 2)  │
-│        ├── needs retry ─────────────────────────────────┘           │
-│        └── retries exhausted ──────▶ Failed                        │
-│                                                                     │
-└──────────────────────────────┬──────────────────────────────────────┘
-                               │
-┌──────────────────────────────▼──────────────────────────────────────┐
-│              Sandbox Workspace (Safety Layer)                       │
-│    All code changes happen in a throwaway copy — NEVER the real     │
-│    project. Only apply_human_decision() can touch the real code.    │
-└─────────────────────────────────────────────────────────────────────┘
+    Supervisor --> Investigation --> Knowledge --> Debugging --> Coding --> Testing --> Review
+                                                                  ^                      |
+                                                                  |   route_after_review  |
+                                                                  +------- retry ---------+
+                                                  approved --> awaiting_approval --> END
+                                                  retries used up --> failed --> END
+         |
+         v
+Sandbox Workspace
+    Every code change happens in a throwaway temp copy.
+    Only apply_human_decision() can write to the real project.
 ```
 
 ---
 
-## 🔑 Key Technical Concepts Demonstrated
+## How the agents work
 
-### 1. 🤖 Agentic AI (Multi-Agent System)
+There are 7 agents in the pipeline. Some call Gemini, some don't. Here's what each one actually does:
 
-**What it means:** Instead of one monolithic AI doing everything, the workload is split across **7 specialized agents**, each with a focused role, communicating through a shared state.
+**Supervisor** sets the incident status to `in_progress`. No LLM call. The workflow is linear enough that having an LLM decide "what's next" would just add cost and randomness for no benefit.
 
-**How it's implemented:**
+**Investigation Agent** reads `logs/app.log` and greps through the source files using the repo tools. Then one Gemini call summarizes all that raw evidence into key findings. Code: `backend/app/agents/investigation.py`
 
-| Agent | Role | Uses LLM? |
-|---|---|---|
-| **Supervisor** | Initializes investigation, routes to first agent | ❌ No |
-| **Investigation** | Reads logs + greps source code → summarizes evidence | ✅ 1 call |
-| **Knowledge (RAG)** | Retrieves relevant docs from knowledge base | ✅ 0-2 calls |
-| **Debugging** | Diagnoses root cause from evidence + context | ✅ 1 call |
-| **Coding** | Proposes a fix (sandboxed, with reflection on retries) | ✅ 1 call |
-| **Testing** | Runs real `pytest` suite — no LLM, actual test execution | ❌ No |
-| **Review** | Reviews the real `git diff` + test results for risks | ✅ 1 call |
+**Knowledge Agent (RAG)** retrieves relevant documentation from the knowledge base. This is where the Agentic RAG happens. More on that below. Code: `backend/app/agents/knowledge.py`
 
-📁 **Code:** [`backend/app/agents/`](backend/app/agents/)
+**Debugging Agent** takes the evidence from Investigation and the docs from Knowledge, and makes one Gemini call to produce a `RootCauseAnalysis` with a confidence score and the specific evidence backing it. Code: `backend/app/agents/debugging.py`
 
----
+**Coding Agent** proposes a find-and-replace patch targeting one file. The fix is applied only to the sandbox workspace, never the real project. On retries, it gets feedback about what went wrong last time (test failures, review concerns) so it doesn't repeat the same mistake. Code: `backend/app/agents/coding.py`
 
-### 2. 📚 RAG — Retrieval-Augmented Generation
+**Testing Agent** runs the actual `pytest` suite inside the sandbox. No LLM. The test exit code is what matters, not an AI's opinion. Code: `backend/app/agents/testing.py`
 
-**What it means:** Instead of relying solely on the LLM's training data, the system retrieves relevant documentation from a knowledge base to ground its diagnosis in facts.
+**Review Agent** looks at the real `git diff` plus the test results and decides if the fix is safe. It can reject a fix that technically passes tests but seems risky or out of scope. Code: `backend/app/agents/review.py`
 
-**Two RAG strategies implemented:**
-
-#### Traditional RAG (Baseline)
-```
-Incident Description → Embed → Vector Search → Top-K Chunks → Answer
-```
-
-#### Agentic RAG (Default — What Makes This Advanced)
-```
-Incident Description
-       ↓
-Gemini decides WHAT to search for (RetrievalPlan)
-       ↓
-Vector search with those queries (ChromaDB)
-       ↓
-Gemini evaluates: "Is this enough?" (SufficiencyCheck)
-       ↓
-  ├── Yes → Proceed to Debugging Agent
-  └── No  → Refine search queries → Another round (max 2 rounds)
-```
-
-**Why Agentic RAG is better:** A login error shouldn't just search for "login" — it should also search for "environment variables" and "JWT configuration." The LLM intelligently decides what to retrieve.
-
-**Fallback mechanism:** If Gemini API fails, the system automatically falls back to keyword-based search — zero downtime, fully transparent.
-
-📁 **Code:** [`backend/app/rag/agentic_retrieval.py`](backend/app/rag/agentic_retrieval.py) · [`backend/app/agents/knowledge.py`](backend/app/agents/knowledge.py)
+After Review, the graph routes based on the outcome: if approved and tests passed, it goes to `awaiting_approval`. If there are retries left, it loops back to Coding with the feedback. If retries are exhausted (`MAX_RETRIES = 2`), it marks the incident as failed. The loop physically cannot run forever.
 
 ---
 
-### 3. 🔄 LangGraph — Agent Orchestration Framework
+## Agentic RAG (not just basic retrieval)
 
-**What it means:** LangGraph (from the LangChain ecosystem) provides a graph-based framework to orchestrate multi-agent workflows with state management, conditional routing, and retry logic.
+This is one of the core things I wanted to get right. Basic RAG just embeds the query and does a similarity search. That works, but it's limited. If someone reports "login is failing," you'd also want to search for "environment variable configuration" and "JWT setup." The incident text alone doesn't always contain the right search terms.
 
-**How it's used:**
+**How Agentic RAG works here:**
+
+The Knowledge Agent asks Gemini to generate a `RetrievalPlan` with 1 to 3 targeted search queries based on the incident. Those queries are run against a ChromaDB vector store (embeddings via `gemini-embedding-001`, 768 dimensions). Then Gemini evaluates the retrieved chunks: are they actually sufficient to explain this incident? If not, it says what's missing, and another round of retrieval happens with refined queries. This runs up to 2 rounds max.
+
+```
+Incident description
+       |
+Gemini generates search queries (RetrievalPlan)
+       |
+Vector search in ChromaDB for each query
+       |
+Gemini checks: "Is this enough?" (SufficiencyCheck)
+       |
+   sufficient? --> done, pass context to Debugging Agent
+   not enough? --> generate better queries, try again (max 2 rounds)
+```
+
+There's also a fallback. If the Gemini API call fails for any reason (no key, quota, network error), the system catches the exception and falls back to plain keyword search over the markdown files. Zero downtime, and it's logged so you can see exactly what happened. You can also force keyword mode by setting `RAG_MODE=keyword` in the environment.
+
+Both modes produce the same data shape (`knowledge_context: list[str]`), so the Debugging Agent downstream doesn't know or care which strategy retrieved the docs.
+
+The full RAG pipeline: `backend/app/rag/`
+- `chunking.py` splits docs into ~600 char chunks (paragraph-aware, no LLM)
+- `vector_store.py` manages the ChromaDB collection
+- `ingest.py` handles the ingestion pipeline at startup
+- `agentic_retrieval.py` is the iterative retrieval loop
+- `retrieval.py` is the simpler baseline semantic search
+
+---
+
+## LangGraph workflow
+
+The whole multi-agent pipeline is wired together as a LangGraph `StateGraph`. This is the actual code (simplified):
 
 ```python
-# The actual workflow graph (simplified from backend/app/graph/workflow.py)
 graph = StateGraph(IncidentState)
 
-# Add agent nodes
 graph.add_node("supervisor", supervisor.start_investigation)
 graph.add_node("investigation", investigation.build_investigation_node(...))
 graph.add_node("knowledge", knowledge.build_knowledge_node(...))
@@ -180,296 +144,256 @@ graph.add_node("coding", coding.build_coding_node(...))
 graph.add_node("testing", testing.build_testing_node(...))
 graph.add_node("review", review.build_review_node(...))
 
-# Conditional routing after review — the key LangGraph feature
+# This is the interesting part: conditional routing after review
 graph.add_conditional_edges(
     "review",
-    route_after_review,  # Returns "approve", "retry", or "fail"
+    route_after_review,
     {"approve": "awaiting_approval", "retry": "coding", "fail": "failed"}
 )
 ```
 
-**Key LangGraph concepts demonstrated:**
-- **`StateGraph`** — Typed state shared across all agents (`IncidentState`)
-- **Conditional edges** — Review agent routes to approval, retry, or failure
-- **Bounded retry loop** — Coding → Testing → Review → (retry) with `MAX_RETRIES = 2`
-- **State accumulation** — Each agent reads previous agents' outputs and adds its own
+`IncidentState` is the shared Pydantic model that every agent reads from and writes to. It carries the incident details, evidence, root cause analysis, patch proposal, test results, review results, retry count, and messages.
 
-📁 **Code:** [`backend/app/graph/workflow.py`](backend/app/graph/workflow.py)
+Why LangGraph instead of just a for-loop? Because the retry/approve/fail branching after Review is a real graph routing decision. `route_after_review` is a pure function that reads the state and returns `"approve"`, `"retry"`, or `"fail"`. LangGraph makes that explicit and testable instead of burying it in nested if/else blocks.
+
+Code: `backend/app/graph/workflow.py`
 
 ---
 
-### 4. 🔁 Reflection & Retry Pattern
+## Reflection and retry
 
-**What it means:** When a fix fails tests or review, the Coding Agent doesn't blindly retry — it receives feedback on WHY the previous attempt failed and adjusts.
+When the Coding Agent runs again after a failed attempt, it doesn't just try again blindly. It gets the previous test results and review concerns folded into the prompt:
 
 ```python
-# From backend/app/agents/coding.py — retry with reflection
 if is_retry:
     feedback = f"Tests: {state.test_result.summary} | Review: {state.review_result.concerns}"
     prompt += f"\nPrevious fix failed: {feedback}\nPropose a DIFFERENT fix.\n"
 ```
 
-This mirrors how real engineers iterate — learn from failure, don't repeat it.
+The sandbox also keeps the earlier edits rather than resetting, so retries build on what's already there. This is a simple but real implementation of the reflection pattern.
 
 ---
 
-### 5. 🛡️ Safety & Sandboxing
+## Safety model
 
-A critical design principle: **the LLM is not malicious, but it IS wrong sometimes.** The system stays safe even when the AI makes mistakes.
+The core assumption: the LLM is not malicious, but it is frequently wrong. The system needs to be safe even when the AI produces bad output.
 
-| Safety Control | Implementation |
-|---|---|
-| **Sandbox execution** | All patches applied to a temp copy, never the real project |
-| **Path traversal guard** | `security.py` prevents `../../etc/passwd` style attacks |
-| **Patch validation** | Original snippet must match exactly once, or the patch is rejected |
-| **Real test execution** | `pytest` runs actual tests — no "LLM says it looks right" |
-| **Bounded retries** | `MAX_RETRIES = 2` — the loop physically cannot run forever |
-| **Human approval gate** | `apply_human_decision()` is the ONLY path to modify real code |
+**Sandbox isolation** Every patch the Coding Agent proposes gets applied to a throwaway temp-directory copy of `sample_project/`. The real project directory is never touched by any agent. (`backend/app/agents/workspace.py`)
 
-📁 **Code:** [`backend/app/agents/workspace.py`](backend/app/agents/workspace.py) · [`backend/app/tools/security.py`](backend/app/tools/security.py)
+**Path traversal guards** Every file operation goes through `security.py`'s `resolve_within_root()`, which blocks paths like `../../etc/passwd`. This applies to all the tools (log, repo, doc, test, git) and to the workspace itself.
+
+**Patch validation** When applying a patch, the original snippet must match the file content exactly once. Zero matches means the patch is stale. Multiple matches means it's ambiguous. Either way, it's rejected outright, not applied on a best-effort basis.
+
+**Real test execution** The Testing Agent runs `pytest` for real. It doesn't ask the LLM if the code looks correct.
+
+**Bounded retries** `MAX_RETRIES = 2`, meaning the Coding Agent runs at most 3 times total. The loop cannot run indefinitely.
+
+**Human approval gate** `apply_human_decision()` is the only function in the entire codebase that can copy a fixed file from the sandbox into the real project, and only when explicitly called with `approved=True`. The frontend's approve/reject buttons call the same API endpoint. There is no code path that bypasses this.
 
 ---
 
-### 6. 📊 Structured LLM Outputs (Pydantic)
+## Structured LLM outputs
 
-Every LLM call returns structured, validated data — not raw text that might break downstream agents:
+Every Gemini call that produces data for downstream agents uses `generate_structured()` with a Pydantic model as the schema:
 
 ```python
 class RootCauseAnalysis(BaseModel):
-    root_cause: str              # What's actually broken
-    confidence: float            # How confident (0-1)
-    supporting_evidence: list[str]  # What evidence supports this
+    root_cause: str
+    confidence: float
+    supporting_evidence: list[str]
 
 class PatchProposal(BaseModel):
-    target_file: str             # Which file to patch
-    original_snippet: str        # Exact code to find
-    replacement_snippet: str     # What to replace it with
-    explanation: str             # Why this fixes the issue
+    target_file: str
+    original_snippet: str
+    replacement_snippet: str
+    explanation: str
 ```
 
-If Gemini returns malformed JSON, Pydantic raises a `ValidationError` — the system never silently processes bad data.
+Gemini returns JSON matching the schema, Pydantic validates it. If the response is malformed, it raises a `ValidationError` instead of silently passing garbage to the next agent.
 
-📁 **Code:** [`backend/app/models/agent_outputs.py`](backend/app/models/agent_outputs.py)
+Code: `backend/app/models/agent_outputs.py`
 
 ---
 
-## 🗂️ Project Structure
+## Project structure
 
 ```
-AgentForge/
-├── 🐍 backend/app/
-│   ├── agents/          # 7 AI agents (supervisor, investigation, knowledge,
-│   │                    #   debugging, coding, testing, review, human_approval)
-│   ├── graph/           # LangGraph StateGraph workflow orchestration
-│   ├── rag/             # RAG pipeline (chunking, embeddings, vector store,
-│   │                    #   agentic retrieval with iterative refinement)
-│   ├── llm/             # Gemini client (only file importing google.genai)
-│   ├── tools/           # Deterministic tools (log parsing, repo search,
-│   │                    #   doc search, test runner, git diff, security)
-│   ├── models/          # Pydantic models (IncidentState, agent outputs, events)
-│   ├── db/              # SQLAlchemy ORM (SQLite/Postgres)
-│   ├── api/             # FastAPI routes, schemas, app factory
-│   └── core/            # Config, logging
+agentforge/
+├── backend/app/
+│   ├── agents/          7 agents (supervisor, investigation, knowledge,
+│   │                      debugging, coding, testing, review, human_approval)
+│   ├── graph/           LangGraph StateGraph workflow
+│   ├── rag/             RAG pipeline (chunking, embeddings, vector store,
+│   │                      agentic retrieval with iterative refinement)
+│   ├── llm/             Gemini client (the only file that imports google.genai)
+│   ├── tools/           Deterministic tools (log parsing, repo search,
+│   │                      doc search, test runner, git diff, security)
+│   ├── models/          Pydantic models (IncidentState, agent outputs, events)
+│   ├── db/              SQLAlchemy ORM (SQLite by default, Postgres via config)
+│   ├── api/             FastAPI routes, schemas, app factory
+│   └── core/            Config, logging
 │
-├── ⚛️  frontend/src/
-│   ├── components/      # Dashboard, IncidentDetail, Timeline, StatusBadge
-│   ├── api.js           # API client
-│   └── App.jsx          # Main app (two-view SPA)
+├── frontend/src/
+│   ├── components/      Dashboard, IncidentDetail, Timeline, StatusBadge
+│   ├── api.js           API client
+│   └── App.jsx          Main app (two views, no router needed)
 │
-├── 🧪 backend/tests/    # 131 tests (unit + integration + LangGraph routing)
-├── 📊 evaluation/       # Evaluation harness (measures real fix accuracy)
-├── 📚 knowledge_base/   # Markdown docs the RAG pipeline retrieves from
-├── 🐛 sample_project/   # Intentionally-buggy app that AgentForge investigates
-├── 📜 scripts/          # Demo scripts (investigate_demo.py, rag_demo.py)
-├── 📖 docs/             # Architecture, agent workflow, RAG, security, observability
-├── 🐳 Dockerfile        # Backend container
-├── 🐳 docker-compose.yml# Full stack orchestration
-└── ⚙️  pyproject.toml    # Project config & dependencies
+├── backend/tests/       131 tests (unit + integration + LangGraph routing)
+├── evaluation/          Evaluation harness measuring real fix accuracy
+├── knowledge_base/      Markdown docs the RAG pipeline retrieves from
+├── sample_project/      Intentionally buggy app that AgentForge investigates
+├── scripts/             Demo scripts (investigate_demo.py, rag_demo.py)
+├── docs/                Architecture, agent workflow, RAG, security docs
+├── Dockerfile
+├── docker-compose.yml
+└── pyproject.toml
 ```
 
 ---
 
-## ⚙️ Tech Stack
+## Tech stack
 
-| Layer | Technology | Why This Choice |
+| Layer | Technology | Why |
 |---|---|---|
-| **Agent Orchestration** | **LangGraph** `StateGraph` | Graph-based workflow with conditional routing, retry loops, and typed state — makes the multi-agent pipeline explicit and testable |
-| **LLM** | **Google Gemini** (`google-genai`) | Structured output support, embedding API, free tier available |
-| **RAG Vector Store** | **ChromaDB** | In-memory vector store, rebuilt at startup — simple and sufficient for this scale |
-| **Embeddings** | **Gemini Embedding** (`gemini-embedding-001`) | 768-dimension embeddings with task-type hints (RETRIEVAL_DOCUMENT vs RETRIEVAL_QUERY) |
-| **Backend API** | **FastAPI** | Async-native, auto-generated OpenAPI docs, minimal boilerplate |
-| **Database** | **SQLAlchemy** + SQLite (Postgres-ready) | Zero-setup default, one env var swap to Postgres |
-| **Frontend** | **React** + **Vite** | Lightweight SPA (dashboard + incident detail + timeline) |
-| **Validation** | **Pydantic v2** | Structured LLM outputs, request/response schemas, state models |
-| **Containerization** | **Docker** + **Docker Compose** | One-command deployment of backend + frontend |
+| Agent orchestration | LangGraph `StateGraph` | Graph-based workflow with conditional routing and typed state. Makes the multi-agent pipeline explicit and testable. |
+| LLM | Google Gemini (`google-genai`) | Structured output support, embedding API, free tier for development |
+| RAG vector store | ChromaDB (in-memory) | Rebuilt at startup, no persistence needed for this scale |
+| Embeddings | `gemini-embedding-001` | 768 dimensions, supports task-type hints for retrieval |
+| Backend | FastAPI | Async, auto-generated OpenAPI docs, minimal boilerplate |
+| Database | SQLAlchemy + SQLite | Zero setup default, swap to Postgres with one env var |
+| Frontend | React + Vite | Simple SPA with dashboard and incident detail views |
+| Validation | Pydantic v2 | Schema enforcement for LLM outputs and API requests |
+| Containerization | Docker + Docker Compose | One command to spin up the whole stack |
 
 ---
 
-## 🚀 Quick Start
+## Getting started
 
-### Prerequisites
-- Python 3.10+
-- Node.js 18+
-- A Gemini API key (free at [Google AI Studio](https://aistudio.google.com/apikey))
-
-### Installation
+You'll need Python 3.10+, Node.js 18+, and a Gemini API key (free at [Google AI Studio](https://aistudio.google.com/apikey)).
 
 ```bash
-# Clone the repository
 git clone https://github.com/KoushikN01/AgentForge-agentic-ai.git
 cd AgentForge-agentic-ai
 
-# Set up the backend
+# Backend setup
 python -m venv .venv
 .venv\Scripts\activate          # Windows
 # source .venv/bin/activate     # macOS/Linux
 pip install -e ".[dev]"
 
-# Configure environment
+# Environment config
 cp .env.example .env
-# Edit .env → paste your GEMINI_API_KEY
+# Open .env and paste your GEMINI_API_KEY
 ```
 
-### Run Locally
+### Running locally
 
 ```bash
-# Terminal 1 — Backend API
+# Terminal 1: backend
 cd backend && uvicorn app.main:app --reload
-# API at http://localhost:8000 | Swagger docs at http://localhost:8000/docs
+# API at http://localhost:8000, Swagger docs at http://localhost:8000/docs
 
-# Terminal 2 — Frontend
+# Terminal 2: frontend
 cd frontend && npm install && npm run dev
 # Dashboard at http://localhost:5173
 ```
 
-### Run with Docker
+Open the dashboard, create an incident, click "Start investigation," watch the agents work through the pipeline, then approve or reject the fix.
+
+### Running with Docker
 
 ```bash
 docker compose up --build
-# Backend → http://localhost:8000 | Frontend → http://localhost:5173
 ```
 
 ---
 
-## 🧪 Testing
+## Tests
 
 ```bash
-# Run all 131 backend tests (no API key needed — uses scripted Gemini)
+# All 131 backend tests (no API key needed, uses a scripted Gemini client)
 pytest backend/tests -v
 
-# Run the evaluation harness (measures real fix accuracy)
+# Evaluation harness (runs all 3 real bugs through the full pipeline)
 python evaluation/run_evaluation.py
 
-# Run demo investigations
-python scripts/investigate_demo.py                   # Full workflow
-python scripts/investigate_demo.py --incident login  # Specific bug
+# Demo investigations
+python scripts/investigate_demo.py
+python scripts/investigate_demo.py --incident login
+python scripts/investigate_demo.py --incident orders-total
 ```
 
-### What the tests cover:
-- ✅ Every agent individually (unit tests)
-- ✅ Full LangGraph workflow end-to-end (integration tests)
-- ✅ Retry loop and routing logic
-- ✅ Sandbox safety boundary (real project stays untouched until approval)
-- ✅ RAG pipeline (chunking, vector store, agentic retrieval)
-- ✅ API endpoints (create, investigate, approve, reject)
-- ✅ Human approval gate (asserts real project is byte-identical until approved)
+The tests cover every agent individually, the full LangGraph workflow end to end (including the retry path), the sandbox safety boundary (verifying the real project stays byte-identical until approval), the RAG pipeline, all API endpoints, and the human approval gate.
 
 ---
 
-## 🌐 REST API
+## Evaluation results
 
-| Method | Endpoint | Description |
-|---|---|---|
-| `GET` | `/health` | Health check |
-| `POST` | `/incidents` | Create an incident (`title`, `description`, `severity`) |
-| `GET` | `/incidents` | List all incidents |
-| `GET` | `/incidents/{id}` | Full incident state (evidence, root cause, patch, tests, review) |
-| `POST` | `/incidents/{id}/investigate` | Start the multi-agent investigation workflow |
-| `GET` | `/incidents/{id}/timeline` | Per-agent workflow events |
-| `POST` | `/incidents/{id}/approve` | Approve or reject the proposed fix (`{"approved": true/false}`) |
-| `GET` | `/incidents/{id}/report` | Final structured investigation report |
-
-Full Swagger UI available at `/docs` when the server is running.
-
----
-
-## 📈 Evaluation Results
-
-The evaluation harness tests against **3 real, intentional bugs** in the sample project (not synthetic benchmarks):
+The evaluation harness tests against 3 real, intentional bugs in `sample_project/` (not synthetic benchmarks):
 
 | Metric | Result |
 |---|---|
-| Automated tests passing | **131 / 131** |
-| Incidents reaching approval | **3 / 3** |
-| Correct file targeted | **3 / 3** |
-| Sandbox tests passing after fix | **3 / 3** |
+| Automated tests passing | 131 / 131 |
+| Incidents reaching approval | 3 / 3 |
+| Correct file targeted | 3 / 3 |
+| Sandbox tests passing after fix | 3 / 3 |
 
 ---
 
-## 🎯 Skills Demonstrated
+## REST API
 
-This project is specifically designed to demonstrate proficiency in:
+| Method | Endpoint | What it does |
+|---|---|---|
+| GET | `/health` | Liveness check |
+| POST | `/incidents` | Create an incident (title, description, severity) |
+| GET | `/incidents` | List all incidents |
+| GET | `/incidents/{id}` | Full state: evidence, root cause, patch, test/review results |
+| POST | `/incidents/{id}/investigate` | Start the multi-agent workflow |
+| GET | `/incidents/{id}/timeline` | Per-agent workflow events |
+| POST | `/incidents/{id}/approve` | Approve or reject the fix |
+| GET | `/incidents/{id}/report` | Final structured report |
 
-```
-┌─────────────────────────────────────────────────────┐
-│                 Agentic AI & Gen AI                  │
-├─────────────────────────────────────────────────────┤
-│  ✦ Multi-Agent Systems (7 specialized agents)       │
-│  ✦ LangGraph (StateGraph, conditional routing)      │
-│  ✦ RAG (Agentic retrieval + fallback strategies)    │
-│  ✦ Prompt Engineering (structured outputs)          │
-│  ✦ Reflection & Retry Patterns                      │
-│  ✦ Human-in-the-Loop Workflows                      │
-│  ✦ LLM Safety & Sandboxing                          │
-│  ✦ Vector Embeddings (ChromaDB + Gemini)            │
-│  ✦ Evaluation Harness (real accuracy measurement)   │
-├─────────────────────────────────────────────────────┤
-│              Full-Stack Engineering                   │
-├─────────────────────────────────────────────────────┤
-│  ✦ Python (FastAPI, SQLAlchemy, Pydantic v2)        │
-│  ✦ React + Vite (Dashboard, Timeline, Detail views) │
-│  ✦ REST API Design (12 endpoints, OpenAPI docs)     │
-│  ✦ Docker & Docker Compose                          │
-│  ✦ Test-Driven Development (131 tests, pytest)      │
-│  ✦ Security (path traversal guards, sandbox)        │
-└─────────────────────────────────────────────────────┘
-```
+Swagger UI at `/docs` when the server is running.
 
 ---
 
-## 📖 Documentation
+## What's in the docs/ folder
 
-| Document | What it covers |
+| File | Content |
 |---|---|
-| [`docs/architecture.md`](docs/architecture.md) | System design, request flow, why each technology was chosen |
-| [`docs/agent-workflow.md`](docs/agent-workflow.md) | Every agent explained — role, inputs/outputs, LLM usage |
-| [`docs/rag.md`](docs/rag.md) | RAG pipeline: traditional vs agentic, keyword fallback |
-| [`docs/security.md`](docs/security.md) | Threat model, controls table, what's NOT done (and why) |
-| [`docs/observability.md`](docs/observability.md) | Timeline events, per-node tracing |
-| [`docs/interview-guide.md`](docs/interview-guide.md) | 30-sec / 2-min / 5-min explanations for interviews |
+| `docs/architecture.md` | System design, request flow, why each tech was chosen |
+| `docs/agent-workflow.md` | Every agent: role, inputs/outputs, LLM usage |
+| `docs/rag.md` | RAG pipeline in detail: traditional vs agentic, keyword fallback |
+| `docs/security.md` | Threat model, controls, what's genuinely not done and why |
+| `docs/observability.md` | Timeline events, per-node tracing |
+| `docs/interview-guide.md` | 30-second, 2-minute, and 5-minute explanations |
 
 ---
 
-## 🤝 About the Developer
+## Known limitations
 
-I'm a fresher passionate about **Agentic AI** and **Generative AI**, actively seeking roles in:
-- 🤖 AI/ML Engineer
-- 🧠 Gen AI Developer
-- 🔧 LLM Application Developer
-- 🏗️ AI Platform Engineer
+Stating these upfront because I'd rather be honest than have someone find out during a code review:
 
-This project represents my understanding of real-world AI agent architectures — not a tutorial follow-along, but a ground-up implementation demonstrating how multi-agent systems, RAG pipelines, and LLM orchestration work together to solve real problems.
+Every automated test uses a scripted Gemini client (returns realistic structured responses). This verifies the system's logic and safety controls, not Gemini's actual output quality. Run `scripts/investigate_demo.py` with a real API key to see live results.
 
-**Let's connect:** [GitHub](https://github.com/KoushikN01) 
+Docker setup hasn't been tested with an actual Docker daemon (wasn't available in the build environment). The configs are valid YAML, but `docker compose up` hasn't been run.
 
----
+No API authentication or rate limiting. This is a portfolio project, not a production deployment.
 
-## 📄 License
+One patch per investigation. The system fixes one bug in one file per run. `sample_project` has 3 distinct bugs, so you'd run 3 separate investigations.
 
-This project is open-source and available for educational and demonstration purposes.
+Retries go back to Coding, not Debugging. If the diagnosed root cause itself is wrong, retrying won't help.
 
 ---
 
-<p align="center">
-  <strong>⭐ If you found this project interesting, please consider starring the repository!</strong>
-</p>
+## About me
+
+I'm a fresher looking for roles in Agentic AI, Generative AI, and LLM application development. This project is how I learn by building. Not a tutorial follow-along; I designed the architecture, implemented the agents, wrote the tests, and built the evaluation harness from scratch.
+
+If you're hiring for anything related to multi-agent systems, RAG, LangGraph, LLM integration, or full-stack AI applications, I'd love to chat.
+
+[GitHub](https://github.com/KoushikN01)
+
+---
+
+If you found this interesting, a star on the repo would mean a lot.
